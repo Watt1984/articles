@@ -1,0 +1,33 @@
+name: Daily AI News - French
+
+on:
+  schedule:
+    # Exécuter tous les jours à 10h00 UTC (12h00 heure française)
+    - cron: '0 10 * * *'
+  workflow_dispatch: # Permet de déclencher manuellement
+
+jobs:
+  send-french-newsletter:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install openai requests python-dotenv
+        
+    - name: Run French newsletter script
+      env:
+        NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+        OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+        GMAIL_USER: ${{ secrets.GMAIL_USER }}
+        GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+      run: |
+        python articles_batch_fr_server.py 
