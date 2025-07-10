@@ -29,5 +29,6 @@ jobs:
         OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
         GMAIL_USER: ${{ secrets.GMAIL_USER }}
         GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+        RECIPIENTS: ${{ secrets.RECIPIENTS }}
       run: |
         python articles_batch_en_server.py 
