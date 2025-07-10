@@ -120,6 +120,7 @@ def send_email(subject, html_content, sender, recipients, smtp_server, smtp_port
     msg = MIMEMultipart()
     msg['From'] = sender
     # Si recipients est une liste, joindre avec des virgules
+    print("Destinataires :", recipients)
     if isinstance(recipients, list):
         msg['To'] = ', '.join(recipients)
     else:
