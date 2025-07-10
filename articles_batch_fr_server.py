@@ -115,15 +115,20 @@ def create_email_content_fr(articles, summaries):
     return content
 
 # 5. Envoyer l'e-mail
-def send_email(subject, html_content, sender, recipient, smtp_server, smtp_port, smtp_user, smtp_password):
+# Modifié pour accepter une liste de destinataires
+def send_email(subject, html_content, sender, recipients, smtp_server, smtp_port, smtp_user, smtp_password):
     msg = MIMEMultipart()
     msg['From'] = sender
-    msg['To'] = recipient
+    # Si recipients est une liste, joindre avec des virgules
+    if isinstance(recipients, list):
+        msg['To'] = ', '.join(recipients)
+    else:
+        msg['To'] = recipients
     msg['Subject'] = subject
     msg.attach(MIMEText(html_content, 'html'))
     with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
         server.login(smtp_user, smtp_password)
-        server.sendmail(sender, recipient, msg.as_string())
+        server.sendmail(sender, recipients, msg.as_string())
 
 # 6. Orchestration (version française)
 def main():
@@ -140,7 +145,7 @@ def main():
     SMTP_USER = OS_GMAIL_USER
     SMTP_PASSWORD = OS_GMAIL_PASSWORD
     SENDER = SMTP_USER
-    RECIPIENT = "benoit.v1cent@gmail.com"
+    RECIPIENTS = ["benoit.v1cent@gmail.com", "lenoirisa@gmail.com"]
 
     try:
         # Récupérer les articles en français
@@ -171,7 +176,7 @@ def main():
         print("📧 Contenu de l'email généré")
         
         # Envoyer l'email
-        send_email("Veille IA quotidienne - Français", email_content, SENDER, RECIPIENT, SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)
+        send_email("Veille IA quotidienne - Français", email_content, SENDER, RECIPIENTS, SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)
         print("✅ Email envoyé avec succès !")
         
     except Exception as e:
