@@ -145,7 +145,8 @@ def main():
     SMTP_USER = OS_GMAIL_USER
     SMTP_PASSWORD = OS_GMAIL_PASSWORD
     SENDER = SMTP_USER
-    RECIPIENTS = ["benoit.v1cent@gmail.com", "lenoirisa@gmail.com"]
+    RECIPIENTS = os.environ.get("RECIPIENTS", "")
+    RECIPIENTS = [email.strip() for email in RECIPIENTS.split(",") if email.strip()]
 
     try:
         # Récupérer les articles en français
