@@ -28,8 +28,12 @@ def check_environment():
     return True
 
 # 1. Récupérer les articles d'actualité sur l'IA (version française)
-def fetch_ai_articles_fr(api_key, query="intelligence artificielle", page_size=8):
+def fetch_ai_articles_fr(api_key, page_size=12):
     url = "https://newsapi.org/v2/everything"
+    
+    # Requête plus précise pour l'IA avec des termes spécifiques
+    query = """("intelligence artificielle" OR "IA" OR "AI" OR "machine learning" OR "apprentissage automatique" OR "deep learning" OR "apprentissage profond" OR "GPT" OR "ChatGPT" OR "OpenAI" OR "Google AI" OR "Meta AI" OR "Microsoft AI" OR "robots" OR "automatisation" OR "algorithmes" OR "neural networks" OR "réseaux neuronaux") AND NOT ("incendie" OR "feu" OR "catastrophe naturelle" OR "météo" OR "climat" OR "environnement" OR "pollution")"""
+    
     params = {
         "q": query,
         "language": "fr",
@@ -82,13 +86,46 @@ Résumé :"""
         print(f"Erreur lors du résumé : {e}")
         return "Erreur lors de la génération du résumé"
 
-# 3. Vérifier la qualité d'un article
-def validate_article(article):
-    """Vérifie si un article a un contenu valide"""
-    title = article.get('title', '') or ''
-    description = article.get('description', '') or ''
-    content = article.get('content', '') or ''
-    url = article.get('url', '') or ''
+# Nouvelle fonction pour valider la pertinence IA d'un article
+def validate_ai_relevance(article, openai_api_key):
+    """Vérifie si un article traite bien de l'intelligence artificielle"""
+    title = article.get('title', '')
+    description = article.get('description', '')
+    content = article.get('content', '')
+    
+    # Combiner le titre et la description pour l'analyse
+    text_to_analyze = f"{title} {description}"
+    
+    client = openai.OpenAI(api_key=openai_api_key)
+    
+    prompt = f"""Analyse ce texte et détermine s'il traite de l'intelligence artificielle (IA), du machine learning, des robots, de l'automatisation, ou de technologies liées à l'IA.
+
+Texte à analyser : "{text_to_analyze}"
+
+Réponds uniquement par "OUI" si l'article traite de l'IA ou de technologies liées, ou "NON" sinon."""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=10,
+            temperature=0.1,
+        )
+        
+        result = (response.choices[0].message.content or "").strip().upper()
+        return result == "OUI"
+    except Exception as e:
+        print(f"Erreur lors de la validation IA : {e}")
+        # En cas d'erreur, on accepte l'article par défaut
+        return True
+
+# 3. Vérifier la qualité technique d'un article
+def validate_article_quality(article):
+    """Vérifie si un article a un contenu valide techniquement"""
+    title = str(article.get('title') or '')
+    description = str(article.get('description') or '')
+    content = str(article.get('content') or '')
+    url = str(article.get('url') or '')
     
     # Nettoyer les chaînes
     title = title.strip()
@@ -155,9 +192,21 @@ def main():
         articles = fetch_ai_articles_fr(NEWSAPI_KEY)
         print(f"✅ Récupéré {len(articles)} articles français")
         
-        # Filtrer les articles valides
-        valid_articles = [article for article in articles if validate_article(article)]
-        print(f"✅ {len(valid_articles)} articles valides après filtrage")
+        # Filtrer d'abord par qualité technique, puis par pertinence IA
+        quality_articles = [article for article in articles if validate_article_quality(article)]
+        print(f"✅ {len(quality_articles)} articles de qualité technique après premier filtrage")
+        
+        # Ensuite filtrer par pertinence IA
+        valid_articles = []
+        for article in quality_articles:
+            print(f"🔍 Validation IA pour : {article['title'][:50]}...")
+            if validate_ai_relevance(article, OPENAI_KEY):
+                valid_articles.append(article)
+                print(f"   ✅ Article validé comme pertinent")
+            else:
+                print(f"   ❌ Article rejeté (non pertinent)")
+        
+        print(f"✅ {len(valid_articles)} articles pertinents après validation IA")
         
         if not valid_articles:
             print("❌ Aucun article valide trouvé")
