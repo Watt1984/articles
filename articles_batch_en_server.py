@@ -143,6 +143,31 @@ def validate_article_quality(article):
     
     return True
 
+# 3.5. Supprimer les articles en double
+def remove_duplicate_articles(articles):
+    """Supprime les articles en double basés sur l'URL et le titre"""
+    seen_urls = set()
+    seen_titles = set()
+    unique_articles = []
+    
+    for article in articles:
+        url = article.get('url', '').strip()
+        title = article.get('title', '').strip()
+        
+        # Normaliser le titre pour la comparaison (supprimer les espaces multiples, etc.)
+        normalized_title = ' '.join(title.lower().split())
+        
+        # Vérifier si l'URL ou le titre normalisé a déjà été vu
+        if url not in seen_urls and normalized_title not in seen_titles:
+            seen_urls.add(url)
+            seen_titles.add(normalized_title)
+            unique_articles.append(article)
+        else:
+            print(f"🔄 Duplicate article removed: {title[:50]}...")
+    
+    print(f"✅ {len(articles) - len(unique_articles)} duplicate articles removed")
+    return unique_articles
+
 # 4. Générer le contenu de l'e-mail (version anglaise)
 def create_email_content_en(articles, summaries):
     content = "<h2>Latest AI News - English Articles</h2><ul>"
@@ -185,8 +210,13 @@ def main():
         articles = fetch_ai_articles_en(NEWSAPI_KEY)
         print(f"✅ Retrieved {len(articles)} English articles")
         
+        # Supprimer les articles en double
+        print("🔄 Removing duplicate articles...")
+        unique_articles = remove_duplicate_articles(articles)
+        print(f"✅ {len(unique_articles)} unique articles after removing duplicates")
+        
         # Filtrer d'abord par qualité technique, puis par pertinence IA
-        quality_articles = [article for article in articles if validate_article_quality(article)]
+        quality_articles = [article for article in unique_articles if validate_article_quality(article)]
         print(f"✅ {len(quality_articles)} quality articles after first filtering")
         
         # Ensuite filtrer par pertinence IA
