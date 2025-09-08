@@ -1,4 +1,5 @@
 name: Daily AI News - French
+# Récupérer les articles de la journée
 
 on:
   schedule:
